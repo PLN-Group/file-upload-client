@@ -1,8 +1,6 @@
-
-
 from flask import Flask, request, jsonify
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
+from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher, AES
 import os
 import uuid
 import hashlib
@@ -19,6 +17,14 @@ app.config['PRIVATE_KEYS_FOLDER'] = PRIVATE_KEYS_FOLDER
 # 初始化密钥数据库和文件名数据库
 private_keys_db = {}
 file_names_db = {}
+
+
+def unpad(data, block_size):
+    # 移除填充
+    pad = data[-1]
+    if pad < 1 or pad > block_size:
+        raise ValueError("Invalid padding")
+    return data[:-pad]
 
 
 @app.route('/upload_file_data', methods=['POST'])
@@ -38,7 +44,6 @@ def upload_file_data():
         'original_filename': decoded_filename
     }
 
-
     # 生成RSA密钥对
     private_key = RSA.generate(2048)
     public_key = private_key.publickey().export_key()
@@ -57,19 +62,16 @@ def upload_file_data():
 @app.route('/upload_ppt', methods=['POST'])
 def upload_ppt():
     # 解析上传的文件
-    if 'files' not in request.files:
-        print("No file part in the request")
-        return jsonify({'error': 'No file part in the request'}), 400
+    if 'aes_key' not in request.files or 'files' not in request.files or 'aes_iv' not in request.files:
+        return jsonify({'error': 'Missing aes_key or files part in the request'}), 400
 
+    aes_key_file = request.files['aes_key']
     file = request.files['files']
-    if file.filename == '':
-        print("No selected file")
-        return jsonify({'error': 'No selected file'}), 400
+    aes_iv_file = request.files["aes_iv"]
+    if aes_key_file.filename == '' or file.filename == '':
+        return jsonify({'error': 'No selected aes_key or file'}), 400
 
-    if file:
-        # 打印文件信息
-        print(f"Received file: {file.filename}, Size: {file.content_length}")
-
+    if aes_key_file and file:
         # 从文件名中提取UUID
         file_uuid = file.filename.split('.')[0]
 
@@ -79,14 +81,20 @@ def upload_ppt():
             original_filename = file_names_db[file_uuid]['original_filename']
             timestamp = file_names_db[file_uuid]['timestamp']
 
-            # 解密文件
+            # 解密AES密钥
             private_key = private_keys_db.get(file_uuid)
-
             if private_key:
-                print(f"Decrypting file with UUID: {file_uuid}")
                 cipher = PKCS1_cipher.new(private_key)
-                decrypted_file_content = cipher.decrypt(file.read(), 2048)
-
+                decrypted_aes_key = cipher.decrypt(aes_key_file.read(), 2048)
+                decrypted_aes_iv = cipher.decrypt(aes_iv_file.read(), 2048)
+                # 使用解密的AES密钥解密文件
+                aes_cipher = AES.new(decrypted_aes_key, AES.MODE_CBC, decrypted_aes_iv)
+                decrypted_file_content = aes_cipher.decrypt(file.read())
+                # 移除填充
+                try:
+                    decrypted_file_content = unpad(decrypted_file_content, AES.block_size)
+                except ValueError as e:
+                    return jsonify({'error': 'Invalid padding, cannot decrypt file.'}), 400
                 # 保存解密后的文件
                 decrypted_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{original_filename}')
                 with open(decrypted_file_path, 'wb') as f:
@@ -94,15 +102,11 @@ def upload_ppt():
 
                 return jsonify({'success': True, 'file_path': decrypted_file_path})
             else:
-                print(f"No private key found for UUID: {file_uuid}")
                 return jsonify({'error': 'No private key found for UUID'}), 404
         else:
-            print(f"No file name entry found for UUID: {file_uuid}")
             return jsonify({'error': 'No file name entry found for UUID'}), 404
 
-    print("File upload failed")
     return jsonify({'error': 'File upload failed'}), 500
-
 
 
 if __name__ == '__main__':
