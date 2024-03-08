@@ -104,7 +104,6 @@ def upload_ppt():
     return jsonify({'error': 'File upload failed'}), 500
 
 
-# ...之前的代码保持不变...
 
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
