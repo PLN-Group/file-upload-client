@@ -193,7 +193,7 @@ if __name__ == "__main__":
         logger.info(f"Powerpoint launch: success.")
         logger.info(f"Sys Argv received: {file_path}")
 
-        uf_obj = UploadFile("http://180.166.0.98:1458/", file_path)
+        uf_obj = UploadFile("http://180.166.0.98:1458/upload_file/", file_path)
         uf_obj.run()
         logger.info(f"Program EXIT normally ======\n\n\n")
     except Exception as e:
