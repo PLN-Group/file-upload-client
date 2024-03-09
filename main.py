@@ -52,6 +52,7 @@ class UploadFile(object):
         if self.filesize >= 1024 ** 2 * 256:
             logger.critical("File size larger than 256 MB.")
             logger.critical("This file cannot be uploaded.")
+            self.file_uuid = uuid.uuid4()
             self.cache_file()
             logger.error(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
