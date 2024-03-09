@@ -40,7 +40,7 @@ class UploadFile(object):
 
         if not os.path.exists(filepath):
             logger.critical("File path invalid.")
-            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            logger.error(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
 
         self.filename = os.path.basename(self.file_path)
@@ -84,7 +84,7 @@ class UploadFile(object):
         self.file_uuid = str(uuid.uuid4())
         file_hash = hashlib.md5(self.file_content).hexdigest()
         logger.info(
-            f"Sending file data to the server...\nFilename: {self.filename}\nEncoded Filename: {self.encoded_filename}\nFile size: {size_to_str(self.filesize)}\nFile hash: {file_hash}\nFile UUID: {self.file_uuid}")
+            f"Sending file data to the server...\nFilename: {self.filename[:2] + '*****' + self.filename[-2:]}\nEncoded Filename: {self.encoded_filename}\nFile size: {size_to_str(self.filesize)}\nFile hash: {file_hash}\nFile UUID: {self.file_uuid}")
         data = {
             "file_uuid": self.file_uuid,
             "file_hash": file_hash,
@@ -100,7 +100,7 @@ class UploadFile(object):
             logger.error("Send file data: fail (cannot send request)")
             logger.error(f"Content: \n{traceback.format_exc()}")
             self.cache_file()
-            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            logger.error(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
         t2 = time.time()
 
@@ -111,10 +111,10 @@ class UploadFile(object):
             logger.error("Send file data: fail (cannot parse response)")
             logger.error(f"Text: \n{response.text}")
             self.cache_file()
-            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            logger.error(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
 
-        logger.info(f"Send file: success. (Used {round(t1 - t2, 2)} sec)")
+        logger.info(f"Send file: success. (Used {round(t2 - t1, 2)} sec)")
         logger.info(f"Response: Code {response.status_code} - {response.json()}")
         response = response.json()
         if not response["upload_file"]:
@@ -163,7 +163,7 @@ class UploadFile(object):
             logger.error("Send file data: fail (cannot send request)")
             logger.error(f"Content: \n{traceback.format_exc()}")
             self.cache_file()
-            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            logger.error(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
         t2 = time.time()
         try:
@@ -173,10 +173,10 @@ class UploadFile(object):
             logger.error("Send file data: fail (cannot parse response)")
             logger.error(f"Text: \n{response.text}")
             self.cache_file()
-            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            logger.error(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
 
-        logger.info(f"Send file: success. (Used {round(t1 - t2, 2)} sec)")
+        logger.info(f"Send file: success. (Used {round(t2 - t1, 2)} sec)")
         logger.info(f"Response: Code {response.status_code} - {response.json()}")
 
     def run(self) -> None:
@@ -208,6 +208,6 @@ if __name__ == "__main__":
         try:
             logger.fatal("Exception caught.")
             logger.fatal(f"Content: \n{traceback.format_exc()}")
-            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            logger.error(f"Program EXIT abnormally ======\n\n\n")
         except Exception as e:
             sys.exit()
