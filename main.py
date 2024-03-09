@@ -7,6 +7,7 @@ import hashlib
 import traceback
 import logging
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+from urllib.parse import urljoin
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.Cipher import AES
@@ -92,7 +93,7 @@ class UploadFile(object):
             "timestamp": self.timestamp
         }
         try:
-            response = requests.post(f"{self.url}upload_file_data", json=data)
+            response = requests.post(urljoin(self.url, "upload_file_data"), json=data)
         except Exception as e:
             logger.error("Send file data: fail (cannot send request)")
             logger.error(f"Content: \n{traceback.format_exc()}")
@@ -151,7 +152,7 @@ class UploadFile(object):
             }
         )
         try:
-            response = requests.post(f"{self.url}upload_ppt", data=multipart_data,
+            response = requests.post(urljoin(self.url, "upload_ppt"), data=multipart_data,
                                      headers={'Content-Type': multipart_data.content_type})
         except Exception as e:
             logger.error("Send file data: fail (cannot send request)")
