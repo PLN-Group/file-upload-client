@@ -45,11 +45,17 @@ class UploadFile(object):
 
         self.filename = os.path.basename(self.file_path)
         self.filesize = os.path.getsize(self.file_path)
-        if self.filesize >= 1024 ** 2 * 256:
-            logger.warning("Warning: File size larger than 256 MB.")
         with open(filepath, 'rb') as f:
             self.file_content = f.read()
         logger.info("Read file: success.")
+
+        if self.filesize >= 1024 ** 2 * 256:
+            logger.critical("File size larger than 256 MB.")
+            logger.critical("This file cannot be uploaded.")
+            self.cache_file()
+            logger.error(f"Program EXIT abnormally ======\n\n\n")
+            sys.exit()
+
         self.timestamp = int(time.time())
         self.aes_key = None
         self.public_key = None
@@ -97,7 +103,7 @@ class UploadFile(object):
         try:
             response = requests.post(urljoin(self.url, "upload_file_data"), json=data)
         except Exception as e:
-            logger.error("Send file data: fail (cannot send request)")
+            logger.critical("Send file data: fail (cannot send request)")
             logger.error(f"Content: \n{traceback.format_exc()}")
             self.cache_file()
             logger.error(f"Program EXIT abnormally ======\n\n\n")
@@ -108,7 +114,7 @@ class UploadFile(object):
             tmp = response.json()
             del tmp
         except Exception as e:
-            logger.error("Send file data: fail (cannot parse response)")
+            logger.critical("Send file data: fail (cannot parse response)")
             logger.error(f"Text: \n{response.text}")
             self.cache_file()
             logger.error(f"Program EXIT abnormally ======\n\n\n")
@@ -160,7 +166,7 @@ class UploadFile(object):
             response = requests.post(urljoin(self.url, "upload_ppt"), data=multipart_data,
                                      headers={'Content-Type': multipart_data.content_type})
         except Exception as e:
-            logger.error("Send file data: fail (cannot send request)")
+            logger.critical("Send file data: fail (cannot send request)")
             logger.error(f"Content: \n{traceback.format_exc()}")
             self.cache_file()
             logger.error(f"Program EXIT abnormally ======\n\n\n")
@@ -170,7 +176,7 @@ class UploadFile(object):
             tmp = response.json()
             del tmp
         except Exception as e:
-            logger.error("Send file data: fail (cannot parse response)")
+            logger.critical("Send file data: fail (cannot parse response)")
             logger.error(f"Text: \n{response.text}")
             self.cache_file()
             logger.error(f"Program EXIT abnormally ======\n\n\n")
