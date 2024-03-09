@@ -100,9 +100,18 @@ class UploadFile(object):
             logger.info(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
 
+        try:
+            tmp = response.json()
+            del tmp
+        except Exception as e:
+            logger.error("Send file data: fail (cannot parse response)")
+            logger.error(f"Text: \n{response.text}")
+            self.cache_file()
+            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            sys.exit()
+
         logger.info(f"Send file data: success.\n{response.status_code} {response.json()}")
         response = response.json()
-
         if not response["upload_file"]:
             logger.info("Server rejected file.")
             logger.info(f"Program EXIT normally ======\n\n\n")
@@ -146,6 +155,16 @@ class UploadFile(object):
         except Exception as e:
             logger.error("Send file data: fail (cannot send request)")
             logger.error(f"Content: \n{traceback.format_exc()}")
+            self.cache_file()
+            logger.info(f"Program EXIT abnormally ======\n\n\n")
+            sys.exit()
+
+        try:
+            tmp = response.json()
+            del tmp
+        except Exception as e:
+            logger.error("Send file data: fail (cannot parse response)")
+            logger.error(f"Text: \n{response.text}")
             self.cache_file()
             logger.info(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
