@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher, AES
+from Crypto.Util.Padding import pad, unpad
 import os
 import uuid
 import hashlib
@@ -19,12 +20,12 @@ private_keys_db = {}
 file_names_db = {}
 
 
-def unpad(data, block_size):
-    # 移除填充
-    pad = data[-1]
-    if pad < 1 or pad > block_size:
-        raise ValueError("Invalid padding")
-    return data[:-pad]
+# def unpad(data, block_size):
+#     # 移除填充
+#     pad = data[-1]
+#     # if pad < 1 or pad > block_size:
+#     #     raise ValueError("Invalid padding")
+#     return data[:-pad]
 
 
 @app.route('/upload_file_data', methods=['POST'])
@@ -79,6 +80,7 @@ def upload_ppt():
         if file_uuid in file_names_db:
             # 获取原始文件名和时间戳
             original_filename = file_names_db[file_uuid]['original_filename']
+            print(original_filename)
             timestamp = file_names_db[file_uuid]['timestamp']
 
             # 解密AES密钥
@@ -88,12 +90,13 @@ def upload_ppt():
                 decrypted_aes_key = cipher.decrypt(aes_key_file.read(), 2048)
                 decrypted_aes_iv = cipher.decrypt(aes_iv_file.read(), 2048)
                 # 使用解密的AES密钥解密文件
+                #print(decrypted_aes_iv)
                 aes_cipher = AES.new(decrypted_aes_key, AES.MODE_CBC, decrypted_aes_iv)
                 decrypted_file_content = aes_cipher.decrypt(file.read())
                 # 移除填充
                 try:
                     decrypted_file_content = unpad(decrypted_file_content, AES.block_size)
-                except ValueError as e:
+                except Exception as e:
                     return jsonify({'error': 'Invalid padding, cannot decrypt file.'}), 400
                 # 保存解密后的文件
                 decrypted_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{original_filename}')
