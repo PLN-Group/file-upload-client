@@ -92,6 +92,8 @@ class UploadFile(object):
             "file_size": size_to_str(self.filesize),
             "timestamp": self.timestamp
         }
+
+        t1 = time.time()
         try:
             response = requests.post(urljoin(self.url, "upload_file_data"), json=data)
         except Exception as e:
@@ -100,6 +102,7 @@ class UploadFile(object):
             self.cache_file()
             logger.info(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
+        t2 = time.time()
 
         try:
             tmp = response.json()
@@ -111,7 +114,7 @@ class UploadFile(object):
             logger.info(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
 
-        logger.info(f"Send file data: success.")
+        logger.info(f"Send file: success. (Used {round(t1 - t2, 2)} sec)")
         logger.info(f"Response: Code {response.status_code} - {response.json()}")
         response = response.json()
         if not response["upload_file"]:
@@ -151,6 +154,7 @@ class UploadFile(object):
                 'files': (self.file_uuid, self.encrypted_file_content, 'application/octet-stream')
             }
         )
+        t1 = time.time()
         try:
             response = requests.post(urljoin(self.url, "upload_ppt"), data=multipart_data,
                                      headers={'Content-Type': multipart_data.content_type})
@@ -160,7 +164,7 @@ class UploadFile(object):
             self.cache_file()
             logger.info(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
-
+        t2 = time.time()
         try:
             tmp = response.json()
             del tmp
@@ -171,7 +175,7 @@ class UploadFile(object):
             logger.info(f"Program EXIT abnormally ======\n\n\n")
             sys.exit()
 
-        logger.info(f"Send file: success.")
+        logger.info(f"Send file: success. (Used {round(t1 - t2, 2)} sec)")
         logger.info(f"Response: Code {response.status_code} - {response.json()}")
 
     def run(self) -> None:
