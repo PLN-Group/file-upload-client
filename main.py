@@ -123,7 +123,8 @@ class UploadFile(object):
             sys.exit(0)
 
         self.public_key = response["public_key"]
-        logger.info(f"Get RSA Public key: success.\n{self.public_key}")
+        logger.info(f"Get RSA Public key: success.")
+        logger.info(f"RSA Public key (Decoded):\n{self.public_key}")
 
     def encrypt_file(self) -> None:
         logger.info("Encrypting file with AES...")
