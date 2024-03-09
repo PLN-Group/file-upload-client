@@ -88,6 +88,7 @@ class UploadFile(object):
             "file_uuid": self.file_uuid,
             "file_hash": file_hash,
             "file_name": self.encoded_filename,
+            "file_size": size_to_str(self.filesize),
             "timestamp": self.timestamp
         }
         try:
