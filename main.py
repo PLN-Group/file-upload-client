@@ -206,7 +206,9 @@ if __name__ == "__main__":
         logger = logging.getLogger()
         logger.info(f"Program START ======")
         logger.info(f"Powerpoint launch: success.")
-        logger.info(f"Sys Argv received: {file_path}")
+        basename = os.path.basename(file_path)
+        safe_filename = basename[:2] + '*****' + basename[:-2]
+        logger.info(f"Sys Argv received: {file_path.replace(os.path.basename(file_path), safe_filename)}")
 
         uf_obj = UploadFile("http://180.166.0.98:1458/upload_file/", file_path)
         uf_obj.run()
