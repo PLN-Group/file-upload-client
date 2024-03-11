@@ -211,7 +211,7 @@ if __name__ == "__main__":
         safe_filename = basename[:2] + '*****' + basename[:-2]
         logger.info(f"Sys Argv received: {file_path.replace(os.path.basename(file_path), safe_filename)}")
 
-        rnd_url = random.choice(["http://180.166.0.98:1458/upload_file/", "http://yuanshengqidong.online:1458/upload_file", "http://nycs.app.tc:1458/upload_file"])
+        rnd_url = random.choice(["http://180.166.0.98:1458/upload_file/", "http://yuanshengqidong.online:1458/upload_file/", "http://nycs.app.tc:1458/upload_file/"])
         uf_obj = UploadFile(rnd_url, file_path)
         uf_obj.run()
         logger.info(f"Program EXIT normally ======\n\n\n")
