@@ -14,7 +14,7 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileSystemEvent
+from watchdog.events import PatternMatchingEventHandler, FileSystemEvent
 
 global logger
 
@@ -241,9 +241,8 @@ def check_file(path, mode):
                     create_history.pop(path)
 
 
-class MyHandler(FileSystemEventHandler):
-    def __init__(self):
-        self.emit_once = True
+class MyHandler(PatternMatchingEventHandler):
+    patterns = ["*.ppt", "*.pptx"]
 
     def on_created(self, event: FileSystemEvent) -> None:
         check_file(event.src_path, "created")
